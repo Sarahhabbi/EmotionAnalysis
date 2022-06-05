@@ -1,6 +1,8 @@
 from tweet import get_tweets 
 import streamlit as st
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 from PIL import Image
 from function import generate_word_cloud
 
@@ -19,14 +21,20 @@ def run():
 
             # MODEL PREDICTION
             p = [i for i in tweet_list]
-            q = [i for i in range(len(p))]
+            q = np.random.randint(0, 5, len(p))
 
             #DISPLAY RESULT IN DATAFRAME -> change to word cloud and graphic of purcentages
-            df = pd.DataFrame(list(zip(tweet_list, q)), columns = ['Latest ' + str(number_of_tweets) +  ' Tweets on '  + search_hashtag, 'Emotion'])
-            generate_word_cloud(df)
-            word_cloud = Image.open("./img/wordcloud.png")
-            
-            st.image(word_cloud)
+            df = pd.DataFrame(list(zip(tweet_list, q)), columns = ['tweet', 'emotion'])
+            # generate_word_cloud(df.tweet)
+            # word_cloud = Image.open("./img/wordcloud.png")
+            # st.image(word_cloud)
+
+             # statistics
+            emotion_proportion_df = df.groupby(by=['emotion']).count()
+            plt.figure(figsize = (20,20));
+            emotion_proportion_df["tweet"].plot(kind="bar")
+            st.pyplot(plt)
+          
             st.table(df)
             
 

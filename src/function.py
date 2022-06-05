@@ -94,4 +94,3 @@ def generate_word_cloud(data):
 
     # store to file
     plt.savefig("./img/wordcloud.png", format="png")
-    plt.show()
