@@ -1,8 +1,5 @@
 from tweet import get_tweets 
 import streamlit as st
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 from PIL import Image
 from function import generate_word_cloud, make_prediction, plot_statistics
 
