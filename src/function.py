@@ -3,21 +3,19 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
+from demoji import replace
 
 # STOP WORDS
 import nltk
 from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
 nltk.download('stopwords')
 from nltk.tokenize import RegexpTokenizer
 
+import re
+import pickle
 import string
-from sklearn.svm import LinearSVC
-from sklearn.naive_bayes import BernoulliNB
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics import multilabel_confusion_matrix, classification_report
+from sklearn.metrics import confusion_matrix
 from sklearn.utils.multiclass import unique_labels
 
 english_punctuations = string.punctuation
@@ -25,6 +23,31 @@ punctuations_list = english_punctuations
 
 #remove stopwords 
 STOPWORDS = set(stopwords.words('english'))
+
+X_train = np.load("../data/xtrain.npy", allow_pickle=True)
+vectorizer= TfidfVectorizer(ngram_range=(1,2), max_features=500000)
+vectorizer.fit(X_train)
+
+
+sentiment_to_number = {
+    "sadness" : 0,
+    "worry" : 1,
+    "anger" :	2,
+    "neutral" : 3,
+    "enthusiasm" : 4,	
+    "happiness": 5,
+    "love" : 6
+}
+
+number_to_sentiment = {
+    0 : "sadness",
+    1 : "worry",
+    2 : "anger",
+    3 : "neutral",
+    4 : "enthusiasm",
+    5 : "happiness",
+    6 : "love"
+}
 
 def cleaning_tweet(text):
     # removing punctuation
@@ -37,11 +60,14 @@ def cleaning_tweet(text):
     # removing pseudos
     text = text.replace('@[a-zA-Z0-9-_]*',"")
 
+    # remove emojis
+    text = replace(text, "")
+
     # to lower case
     text = text.lower()
 
     # remove URL
-    text = text.replace('((www.[^s]+)|(https?://[^s]+))',"")
+    text = re.sub('http\S+',"", text)
 
     # tokenization
     tokenizer = RegexpTokenizer(r'\w+|$[0-9]+|\S+')
@@ -50,7 +76,7 @@ def cleaning_tweet(text):
     return text
     
 ## MODEL BUILDING
-def model_evaluate(model):
+def model_evaluate(model, X_test):
     # Predict values for Test dataset
     y_pred = model.predict(X_test)
     return y_pred
@@ -67,6 +93,9 @@ def plot_confusion_matrix(y_test, y_pred):
     plt.ylabel('Actal Values')
     plt.xlabel('Predicted Values')
     plt.show()
+
+def vectorize(X, vectorizer):
+    return vectorizer.transform(X)
 
 # Word cloud
 def display_word_cloud(data):
@@ -94,3 +123,26 @@ def generate_word_cloud(data):
 
     # store to file
     plt.savefig("./img/wordcloud.png", format="png")
+
+def make_prediction(tweets):
+    # load the model from disk
+    filename = 'lr_model.sav'
+    loaded_model = pickle.load(open(filename, 'rb'))
+
+    # NORMALIZATION
+    tweet_normalized = [cleaning_tweet(t) for t in tweets]
+
+    #VECTORIZATION
+    result = vectorize(tweet_normalized, vectorizer)
+    prediction = loaded_model.predict(result)
+
+    df = pd.DataFrame(list(zip(tweet_normalized, prediction)), columns = ['tweet', 'emotion'])
+    df['emotion'] = df['emotion'].replace(to_replace = number_to_sentiment)
+    
+    return df
+
+def plot_statistics(df):
+    emotion_proportion_df = df.groupby(by=['emotion']).count()
+    plt.figure(figsize = (10,10));
+    emotion_proportion_df["tweet"].plot(kind="bar")
+    return plt
