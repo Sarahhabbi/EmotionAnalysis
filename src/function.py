@@ -1,22 +1,26 @@
+import matplotlib.pyplot as plt
+# STOP WORDS
+import nltk
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-from wordcloud import WordCloud
 from demoji import replace
-
-# STOP WORDS
-import nltk
 from nltk.corpus import stopwords
-nltk.download('stopwords')
-from nltk.tokenize import RegexpTokenizer
+from wordcloud import WordCloud
 
-import re
+nltk.download('stopwords')
 import pickle
+import re
 import string
+
+import spacy
+from nltk.tokenize import RegexpTokenizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import confusion_matrix
 from sklearn.utils.multiclass import unique_labels
+
+nlp = spacy.load('en_core_web_lg')
+
 
 english_punctuations = string.punctuation
 punctuations_list = english_punctuations
@@ -81,6 +85,14 @@ def model_evaluate(model, X_test):
     y_pred = model.predict(X_test)
     return y_pred
 
+def get_vectors(tweets):
+    res = []
+    for tweet in tweets:
+        doc = nlp(tweet)
+        vec = doc.vector
+        res.append(vec)
+    return res
+  
 def plot_confusion_matrix(y_test, y_pred):
     labels = unique_labels(y_test)
     column = [f'Predicted {label}' for label in labels]
@@ -126,14 +138,14 @@ def generate_word_cloud(data):
 
 def make_prediction(tweets):
     # load the model from disk
-    filename = 'lr_model.sav'
+    filename = '/src/models/w2v_sentiment.pkl'
     loaded_model = pickle.load(open(filename, 'rb'))
 
     # NORMALIZATION
     tweet_normalized = [cleaning_tweet(t) for t in tweets]
 
     #VECTORIZATION
-    result = vectorize(tweet_normalized, vectorizer)
+    result = get_vectors(tweet_normalized)
     prediction = loaded_model.predict(result)
 
     df = pd.DataFrame(list(zip(tweet_normalized, prediction)), columns = ['tweet', 'emotion'])
