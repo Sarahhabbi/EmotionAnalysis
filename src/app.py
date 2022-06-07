@@ -19,6 +19,7 @@ def run():
 
             # PREDICTION
             df = make_prediction_w2vec(tweet_list)
+            # df = make_prediction_tf_idf(tweet_list)
 
             # DISPLAY WORD CLOUD
             generate_word_cloud(df.tweet)
