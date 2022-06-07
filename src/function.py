@@ -92,7 +92,51 @@ def get_vectors(tweets):
         vec = doc.vector
         res.append(vec)
     return res
-  
+    
+def vectorize(X, vectorizer):
+    return vectorizer.transform(X)
+
+def make_prediction_w2vec(tweets):
+    # load the model from disk
+    filename = './models/w2v_sentiment.pkl'
+    loaded_model = pickle.load(open(filename, 'rb'))
+
+    # NORMALIZATION
+    tweet_normalized = [cleaning_tweet(t) for t in tweets]
+
+    #VECTORIZATION
+    result = get_vectors(tweet_normalized)
+    prediction = loaded_model.predict(result)
+
+    df = pd.DataFrame(list(zip(tweet_normalized, prediction)), columns = ['tweet', 'emotion'])
+    df['emotion'] = df['emotion'].replace(to_replace = number_to_sentiment)
+    
+    return df
+
+def make_prediction_tf_idf(tweets):
+    # load the model from disk
+    filename = './models/lr_model.sav'
+    loaded_model = pickle.load(open(filename, 'rb'))
+
+    # NORMALIZATION
+    tweet_normalized = [cleaning_tweet(t) for t in tweets]
+
+    #VECTORIZATION
+    result = vectorize(tweet_normalized, vectorizer)
+    prediction = loaded_model.predict(result)
+
+    df = pd.DataFrame(list(zip(tweet_normalized, prediction)), columns = ['tweet', 'emotion'])
+    df['emotion'] = df['emotion'].replace(to_replace = number_to_sentiment)
+    
+    return df
+
+def plot_statistics(df):
+    emotion_proportion_df = df.groupby(by=['emotion']).count()
+    plt.figure(figsize = (10,10));
+    emotion_proportion_df["tweet"].plot(kind="bar")
+    return plt
+
+
 def plot_confusion_matrix(y_test, y_pred):
     labels = unique_labels(y_test)
     column = [f'Predicted {label}' for label in labels]
@@ -106,8 +150,6 @@ def plot_confusion_matrix(y_test, y_pred):
     plt.xlabel('Predicted Values')
     plt.show()
 
-def vectorize(X, vectorizer):
-    return vectorizer.transform(X)
 
 # Word cloud
 def display_word_cloud(data):
@@ -135,26 +177,3 @@ def generate_word_cloud(data):
 
     # store to file
     plt.savefig("./img/wordcloud.png", format="png")
-
-def make_prediction(tweets):
-    # load the model from disk
-    filename = '/src/models/w2v_sentiment.pkl'
-    loaded_model = pickle.load(open(filename, 'rb'))
-
-    # NORMALIZATION
-    tweet_normalized = [cleaning_tweet(t) for t in tweets]
-
-    #VECTORIZATION
-    result = get_vectors(tweet_normalized)
-    prediction = loaded_model.predict(result)
-
-    df = pd.DataFrame(list(zip(tweet_normalized, prediction)), columns = ['tweet', 'emotion'])
-    df['emotion'] = df['emotion'].replace(to_replace = number_to_sentiment)
-    
-    return df
-
-def plot_statistics(df):
-    emotion_proportion_df = df.groupby(by=['emotion']).count()
-    plt.figure(figsize = (10,10));
-    emotion_proportion_df["tweet"].plot(kind="bar")
-    return plt

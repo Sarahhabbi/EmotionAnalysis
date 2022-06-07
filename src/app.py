@@ -1,7 +1,7 @@
 from tweet import get_tweets 
 import streamlit as st
 from PIL import Image
-from function import generate_word_cloud, make_prediction, plot_statistics
+from function import generate_word_cloud, make_prediction_w2vec, make_prediction_tf_idf, plot_statistics
 
 
 # STREMLIT APP
@@ -18,7 +18,7 @@ def run():
             tweet_list = get_tweets(search_hashtag, number_of_tweets)
 
             # PREDICTION
-            df = make_prediction(tweet_list)
+            df = make_prediction_w2vec(tweet_list)
 
             # DISPLAY WORD CLOUD
             generate_word_cloud(df.tweet)
